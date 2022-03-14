@@ -1,16 +1,14 @@
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, filters
+from django.shortcuts import get_object_or_404
+from posts.models import Comment, Follow, Group, Post
+from rest_framework import filters, viewsets
 from rest_framework.exceptions import ParseError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from posts.models import Follow, Comment, Group, Post
-
-from .mixins import ListCreateViewSet, ListRetrieveViewSet
-from .permissions import AuthorOrReadOnlyPermission, ReadOnlyPermission
 from . import serializers
-
+from .mixins import ListCreateViewSet
+from .permissions import AuthorOrReadOnlyPermission
 
 User = get_user_model()
 
