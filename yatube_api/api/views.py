@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from posts.models import Comment, Follow, Group, Post
 from rest_framework import filters, viewsets
-from rest_framework.exceptions import ParseError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+from posts.models import Comment, Group, Post
 
 from . import serializers
 from .mixins import ListCreateViewSet
@@ -47,26 +47,10 @@ class FollowViewSet(ListCreateViewSet):
     search_fields = ['following__username', ]
 
     def perform_create(self, serializer):
-        if 'following' not in self.request.data:
-            raise ParseError(
-                detail='Ошибка в запросе, укажите параметр following'
-            )
-        try:
-            author = User.objects.get(username=self.request.data['following'])
-        except User.DoesNotExist:
-            raise ParseError(detail='Нет автора с таким именем')
-
-        if self.request.user == author:
-            raise ParseError(
-                detail='Нельзя подписаться на самого себя'
-            )
-        if Follow.objects.filter(
-                user=self.request.user, following=author).exists():
-            raise ParseError(
-                detail='Нельзя подписаться на автора дважды'
-            )
+        serializer.is_valid()
+        author = User.objects.get(username=self.request.data['following'])
         serializer.save(user=self.request.user,
                         following=author)
 
     def get_queryset(self):
-        return Follow.objects.filter(user=self.request.user)
+        return self.request.user.follower.all()

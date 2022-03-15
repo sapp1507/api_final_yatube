@@ -1,6 +1,7 @@
-from posts.models import Comment, Follow, Group, Post
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
+
+from posts.models import Comment, Follow, Group, Post, User
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -41,3 +42,26 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['user', 'following']
         model = Follow
+
+    def validate(self, attrs):
+        request = self.context['request']
+
+        if 'following' not in request.data:
+            raise serializers.ValidationError(
+                'Ошибка в запросе, укажите параметр following'
+            )
+        try:
+            author = User.objects.get(username=request.data['following'])
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Нет автора с таким именем')
+
+        if author == request.user:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя')
+
+        if request.user.follower.filter(following=author).exists():
+            raise serializers.ValidationError(
+                f'Вы уже подписались на автора {author}'
+            )
+
+        return attrs
